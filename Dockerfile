@@ -30,20 +30,17 @@ WORKDIR /home/redteam/BicciWallet/Frontend
 RUN npm install
 
 # 6. Configurar MySQL: crear DB y usuario
-RUN service mysql start && \
+RUN usermod -d /var/lib/mysql mysql && service mysql start && \
     mysql -e "CREATE DATABASE wallet_db;" && \
     mysql -e "CREATE USER 'admin'@'localhost' IDENTIFIED BY 'admin123';" && \
     mysql -e "GRANT ALL PRIVILEGES ON wallet_db.* TO 'admin'@'localhost';" && \
     mysql -e "FLUSH PRIVILEGES;"
 
 # 7. Exponer puertos
-EXPOSE 8081 8082 8083 4200 22 3306  # Note: Host should map 3307 -> 3306
+# Note: Host should map 3307 -> 3306
+EXPOSE 8081 8082 8083 4200 22 3306  
 
 # 8. Ejecutar todos los servicios
-CMD service ssh start && \
-    service mysql start && \
-    cd /home/redteam/BicciWallet/Backend/ms-users && mvn spring-boot:run > /dev/null 2>&1 & \
-    cd /home/redteam/BicciWallet/Backend/ms-accounts && mvn spring-boot:run > /dev/null 2>&1 & \
-    cd /home/redteam/BicciWallet/Backend/ms-transactions && mvn spring-boot:run > /dev/null 2>&1 & \
-    cd /home/redteam/BicciWallet/Frontend && ng serve --host 0.0.0.0 --port 4200 > /dev/null 2>&1 & \
-    tail -f /dev/null
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+ENTRYPOINT ["/entrypoint.sh"]
